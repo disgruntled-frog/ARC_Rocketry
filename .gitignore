@@ -1,0 +1,26 @@
+# Ignore the hidden file that Arduino IDE creates
+.ino.bak
+
+# Ignore compiled files
+*.hex
+*.bin
+*.elf
+*.eep
+
+# Ignore temporary and build folders
+build/
+.pio/        # Ignore PlatformIO build folder if you use it
+
+# Ignore library examples
+# You only need this if you are developing a library and want to ignore the example sketches
+examples/*
+!examples/ # But don't ignore the directory itself
+
+# Ignore debug output from Visual Studio or other IDEs
+_vm/
+*.vcproj
+*.sln
+
+# Operating system generated files
+.DS_Store
+Thumbs.db

@@ -148,15 +148,13 @@ void config_imu(){
   results = writeRegister(IMU_ADDR, IMU_CTRL2, B00001000); // High-performance, ODR 480 Hz
   results = writeRegister(IMU_ADDR, IMU_CTRL6, B00001100); // LPF1: 175, FS +/- 4000 dps
   results = writeRegister(IMU_ADDR, IMU_CTRL8, B00000111); // BW: ODR/4, FS +/- 32 g
-  //results = writeRegister(IMU_ADDR, IMU_CTRL9, B00001000); // Selecting output from ACC LPF2. Come back to this one to tune fitlering
+  results = writeRegister(IMU_ADDR, IMU_CTRL9, B00001000); // Selecting output from ACC LPF2. Come back to this one to tune fitlering
 
 }
 
 void read_imu(byte* _value, int16_t* _raw_data, double* _data){
   readRegisters(IMU_ADDR,IMU_OUTX_L_G,_value,imu_size);   //_value == imu_reg_data
 
-  // Is anything happening in the acc??
-  // Serial.println(_value[6]);
   
   // Byte Concatenation: _raw_data -> [gyroX,gyroY,gyroZ,accX,accY,accZ]
   _raw_data[0] = (_value[1]<<8)|(_value[0]);

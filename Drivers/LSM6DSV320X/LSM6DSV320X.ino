@@ -42,25 +42,35 @@
 
 
 // Defining Values
-#define IMU_WHOAMI_VAL 0x70
+#define IMU_WHOAMI_VAL          0x72
 
 
-
-const byte size = 1;
-byte value[size] = {};
+// To test a single register, ie: WHOAMI
+//const byte size = 1;
+//byte value[size] = {};
 
 
 ////////
-const int axis = 6;  // acc + gyro
+const int axis = 9;     // gyro + acc + hg_acc
+//const int hg_axis = 3;  // hg acc
+
 
 // This will recieve register data (non concatinated)
 const byte imu_size = axis*2;
 byte imu_reg_data[axis*2] = {};
 
+// This will recieve register data from hg (non concatinated)
+//const byte imu_size = hg_axis*2;
+//byte hg_reg_data[hg_axis*2] = {};
+
 // This will be the parsed data
 int16_t raw_imu[axis] = {};
 double imu[axis] = {};
 ////////
+
+
+
+
 
 
 
@@ -89,6 +99,7 @@ void loop() {
     read_imu(imu_reg_data, raw_imu, imu);
   
     // Human Readable
+    
     /*
     Serial.print("Gyro Data: ");
     Serial.print(imu[0]);
@@ -101,7 +112,13 @@ void loop() {
     Serial.print(", ");
     Serial.print(imu[4]);
     Serial.print(", ");
-    Serial.println(imu[5]);
+    Serial.print(imu[5]);
+    Serial.print(" | HG Imu Data: ");
+    Serial.print(imu[6]);
+    Serial.print(", ");
+    Serial.print(imu[7]);
+    Serial.print(", ");
+    Serial.println(imu[8]);
     */
 
     // Serial Plotter Friendly 
@@ -115,7 +132,13 @@ void loop() {
     Serial.print(", ");
     Serial.print(imu[4]);
     Serial.print(", ");
-    Serial.println(imu[5]);
+    Serial.print(imu[5]);
+    Serial.print(", ");
+    Serial.print(imu[6]);
+    Serial.print(", ");
+    Serial.print(imu[7]);
+    Serial.print(", ");
+    Serial.println(imu[8]);
 
 
     delay(100);
@@ -154,18 +177,23 @@ byte writeRegister(byte _addr, byte _reg, byte _value){
 
 void config_imu(){
   // This will be default configuration for everyone, future plans to add customization
-  byte results = writeRegister(IMU_ADDR, IMU_CTRL1, B00001000); // High-performance, ODR 480 Hz
-  results = writeRegister(IMU_ADDR, IMU_CTRL2, B00001000);      // High-performance, ODR 480 Hz
-  results = writeRegister(IMU_ADDR, IMU_CTRL6, B00001101);      // LPF1: 175, FS +/- 4000 dps
-  results = writeRegister(IMU_ADDR, IMU_CTRL8, B00000011);      // BW: ODR/4, FS +/- 16 g
-  results = writeRegister(IMU_ADDR, IMU_CTRL9, B00001000);      // Selecting output from ACC LPF2. Come back to this one to tune fitlering
-
+  byte results = writeRegister(IMU_ADDR, IMU_CTRL1, B00001000);   // High-performance, ODR 480 Hz
+  results = writeRegister(IMU_ADDR, IMU_CTRL2, B00001000);        // High-performance, ODR 480 Hz
+  results = writeRegister(IMU_ADDR, IMU_CTRL6, B00001101);        // LPF1: 175, FS +/- 4000 dps
+  results = writeRegister(IMU_ADDR, IMU_CTRL8, B00000011);        // BW: ODR/4, FS +/- 16 g
+  results = writeRegister(IMU_ADDR, IMU_CTRL9, B00001000);        // Selecting output from ACC LPF2. Come back to this one to tune fitlering
+  results = writeRegister(IMU_ADDR, IMU_CTRL1_XL_HG, B11011000);  // HG ODR 480 Hz, +/- 32 g, Enble Output, Enble user offset on out reg
 }
 
 void read_imu(byte* _value, int16_t* _raw_data, double* _data){
-  readRegisters(IMU_ADDR,IMU_OUTX_L_G,_value,imu_size);   //_value == imu_reg_data
+  // This will read the gyro -> low g acc -> high g acc
+
+
+  // *** HARD CODED LENGTHS ***
+  readRegisters(IMU_ADDR, IMU_OUTX_L_G, _value, 12);              // _value == imu_reg_data
+  readRegisters(IMU_ADDR, IMU_UI_OUTX_L_A_OIS_HG, _value+12, 6);  // reading in the last 6 bytes into _value
   
-  // Byte Concatenation: _raw_data -> [gyroX,gyroY,gyroZ,accX,accY,accZ]
+  // Byte Concatenation: _raw_data -> [gyroX,gyroY,gyroZ,accX,accY,accZ,hg_accx,hg_accy,hg_accz]
   _raw_data[0] = (_value[1]<<8)|(_value[0]);
   _raw_data[1] = (_value[3]<<8)|(_value[2]);
   _raw_data[2] = (_value[5]<<8)|(_value[4]);
@@ -173,6 +201,10 @@ void read_imu(byte* _value, int16_t* _raw_data, double* _data){
   _raw_data[3] = (_value[7]<<8)|(_value[6]);
   _raw_data[4] = (_value[9]<<8)|(_value[8]);
   _raw_data[5] = (_value[11]<<8)|(_value[10]);
+
+  _raw_data[6] = (_value[13]<<8)|(_value[12]);
+  _raw_data[7] = (_value[15]<<8)|(_value[14]);
+  _raw_data[8] = (_value[17]<<8)|(_value[16]);
 
   // Convert Gyro into dps
   double fs_dps = 4000;
@@ -184,11 +216,19 @@ void read_imu(byte* _value, int16_t* _raw_data, double* _data){
   }
 
   // Convert Acc into g
-  double fs_g = 32;
+  double fs_g = 16;
   double acc_scale_factor = fs_g / max_16_signed;
 
   for (int i=3; i<6; i++){
     _data[i] = _raw_data[i] * acc_scale_factor;
+  }
+
+  // Convert HG Acc into g
+  double fs_hg = 32;
+  double hg_scale_factor = fs_hg / max_16_signed;
+
+  for (int i=6; i<9; i++){
+    _data[i] = _raw_data[i] * hg_scale_factor;
   }
 
 }

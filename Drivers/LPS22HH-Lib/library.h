@@ -1,0 +1,6 @@
+#ifndef LPS22HH_LIB_LIBRARY_H
+#define LPS22HH_LIB_LIBRARY_H
+
+void hello();
+
+#endif //LPS22HH_LIB_LIBRARY_H

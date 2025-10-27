@@ -24,7 +24,7 @@ void appendFile(fs::FS &fs, const char *path, const char *message);
 void renameFile(fs::FS &fs, const char *path1, const char *path2);
 void deleteFile(fs::FS &fs, const char *path);
 void testFileIO(fs::FS &fs, const char *path);
-void timeWrite(fs::FS &fs, const char *path, int num_write_blocks = 1);
+void timeWrite(fs::FS &fs, const char *path, int num_write_blocks = 1, bool append = false);
 
 
 void setup() {
@@ -41,13 +41,27 @@ void setup() {
   }
   listDir(SD,"/",4);            // List all files in SD card with a depth of 4
   createDir(SD,"/Telemetry");   // Creating Telemetry Dir (kinda unnecessary since we only are using it for this but could be useful)
-  timeWrite(SD,"/TEST.txt");
-  deleteFile(SD,"/TEST.txt");
-
+  
+  // Testing Write Speeds of SD Card by the block
+  for (int i = 0; i<20; i++){
+    timeWrite(SD,"/TEST.txt");
+    //deleteFile(SD,"/TEST.txt");
+  }
+  //deleteFile(SD,"/TEST.txt");
 }
 
 void loop() {
+  // Testing Write Speeds of SD Card by the block
+  for (int i = 0; i<1000; i++){
+    timeWrite(SD,"/TEST.txt",1,true);
+    //deleteFile(SD,"/TEST.txt");
+    Serial.println(i);
+  }
+  File myFile = SD.open("/TEST.txt");
+  Serial.println(myFile.size());
+  deleteFile(SD,"/TEST.txt");
 
+  delay(1000);
 
 }
 
@@ -212,7 +226,7 @@ void testFileIO(fs::FS &fs, const char *path) {
   file.close();
 }
 
-void timeWrite(fs::FS &fs, const char *path, int num_write_blocks){
+void timeWrite(fs::FS &fs, const char *path, int num_write_blocks, bool append){
   // For such tight timing constraints, and small testing size, I am using micros() for this
 
 
@@ -220,7 +234,14 @@ void timeWrite(fs::FS &fs, const char *path, int num_write_blocks){
   uint32_t start = micros();
   uint32_t end = start;
 
-  File file = fs.open(path, FILE_WRITE);  // Open Test File
+  // Open Test File
+  File file;
+  if (append){
+    file = fs.open(path, FILE_APPEND);
+  } else {
+    file = fs.open(path, FILE_WRITE);  
+  }
+
   if (!file) {
     Serial.println("Failed to open file for writing");
     return;
@@ -243,7 +264,6 @@ void timeWrite(fs::FS &fs, const char *path, int num_write_blocks){
   end = micros() - start;
 
   Serial.printf("%u written in %lu us\n", num_write_blocks*512, end);
-
   
 }
 

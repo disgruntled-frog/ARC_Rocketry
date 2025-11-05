@@ -6,13 +6,16 @@
 #define LSM6DSV32X_H
 
 #include <Arduino.h>
+#include <Wire.h>
 
 class LSM6DSV32X {
     public:
+
         LSM6DSV32X();
 
         void config();
-        void read();
+        void read(int16_t* _raw_data, double* _data); // Passing in raw and processed (can log raw data in hex to compact the data)
+
     private:
 
 
@@ -21,7 +24,7 @@ class LSM6DSV32X {
         byte writeRegister(byte _addr, byte _reg, byte _value);
 
         // Device Address
-        const int imu_addr  = 0x6A;
+        const int IMU_ADDR  = 0x6A;
 
         // Registers
         const int whoami_reg = 0x0F;

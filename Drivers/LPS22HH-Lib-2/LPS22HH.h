@@ -10,7 +10,7 @@
 
 class LPS22HH {
     public:
-        LPS22HH();
+        explicit LPS22HH(int ADDR = 0x5C);
 
         void config();
         void read(int32_t& raw_baro, double& baro);
@@ -22,7 +22,7 @@ class LPS22HH {
         byte writeRegister(byte _addr, byte _reg, byte _value);
 
         // Device Address
-        const int baro_addr  = 0x5C;
+        const int BARO_ADDR  = 0x5C;
 
         // Registers
         const int whoami_reg = 0x0F;

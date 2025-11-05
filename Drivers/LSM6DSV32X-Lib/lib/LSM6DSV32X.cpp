@@ -4,6 +4,8 @@
 
 #include "LSM6DSV32X.h"
 
+LSM6DSV32X::LSM6DSV32X(const int ADDR) : IMU_ADDR(ADDR){}
+
 void LSM6DSV32X::config(){
     // This will be default configuration for everyone, future plans to add customization
     byte results = writeRegister(IMU_ADDR, IMU_CTRL1, B00001000); // High-performance, ODR 480 Hz

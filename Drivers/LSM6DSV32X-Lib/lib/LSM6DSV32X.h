@@ -11,7 +11,7 @@
 class LSM6DSV32X {
     public:
 
-        LSM6DSV32X();
+        LSM6DSV32X(int ADDR = 0x6A);
 
         void config();
         void read(int16_t* _raw_data, double* _data); // Passing in raw and processed (can log raw data in hex to compact the data)

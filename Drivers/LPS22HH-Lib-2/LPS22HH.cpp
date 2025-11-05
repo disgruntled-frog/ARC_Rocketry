@@ -5,12 +5,12 @@
 #include "LPS22HH.h"
 
 
-void LPS22HH::config_baro(){
+void LPS22HH::config(){
     // This will be default configuration for everyone, future plans to add customization
     byte results = writeRegister(baro_addr, ctrl1_reg, 0b01110000); // ODR 200 Hz, No Low pass, Coninuous Mode, 4-wire SPI
 }
 
-void LPS22HH::read_baro(int32_t& raw_baro, double& baro){
+void LPS22HH::read(int32_t& raw_baro, double& baro){
     // Passing in raw and baro so we can log easier
 
     readRegisters(baro_addr,out_xl_reg,baro_data,baro_size);

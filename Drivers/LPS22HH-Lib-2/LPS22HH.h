@@ -12,8 +12,8 @@ class LPS22HH {
     public:
         LPS22HH();
 
-        void config_baro();
-        void read_baro(int32_t& raw_baro, double& baro);
+        void config();
+        void read(int32_t& raw_baro, double& baro);
 
     private:
 

@@ -1,3 +1,7 @@
+
+
+
+
 /*
   Organization: ARCUIA
 
@@ -21,6 +25,9 @@
 #include <Adafruit_GPS.h>
 #include "SoftwareSerial.h"
 #include <HardwareSerial.h>
+
+// Sensor Libraries (Local Libraries)
+#include <LPS22HH.h>
 
 
 // Defining Objects

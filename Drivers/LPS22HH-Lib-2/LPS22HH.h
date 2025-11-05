@@ -13,11 +13,9 @@ class LPS22HH {
         LPS22HH();
 
         void config_baro();
-        void read_baro(byte* _value, int32_t& raw_baro, double& baro);
-        double get_alt();
+        void read_baro(int32_t& raw_baro, double& baro);
 
     private:
-        double alt;
 
         // Internal Functions
         byte readRegisters(byte _addr, byte _reg, byte* _value,byte _size = 1);

@@ -10,7 +10,9 @@ void LPS22HH::config_baro(){
     byte results = writeRegister(baro_addr, ctrl1_reg, 0b01110000); // ODR 200 Hz, No Low pass, Coninuous Mode, 4-wire SPI
 }
 
-void LPS22HH::read_baro(byte* _value, int32_t& raw_baro, double& baro){
+void LPS22HH::read_baro(int32_t& raw_baro, double& baro){
+    // Passing in raw and baro so we can log easier
+
     readRegisters(baro_addr,out_xl_reg,baro_data,baro_size);
 
     // Byte Concatenation
@@ -20,7 +22,7 @@ void LPS22HH::read_baro(byte* _value, int32_t& raw_baro, double& baro){
 
 }
 
-byte LPS22HH::readRegisters(byte _addr, byte _reg, byte* _value,byte _size){
+byte LPS22HH::readRegisters(byte _addr, byte _reg, byte* _value, byte _size){
     // byte _addr: address of the I2C sensor you wish to communicate with
     // byte _reg: address of the register within said I2C sensor you wish to read from
     // byte* _value: pointer to the array you will store the value(s) read

@@ -28,6 +28,7 @@
 
 // Sensor Libraries (Local Libraries)
 #include <LPS22HH.h>
+#include <LSM6DSV32X.h>
 
 
 // Defining Objects
@@ -37,11 +38,13 @@ HardwareSerial lora_serial(2); // The '2' indicates UART2
 
 
 // Defining Pins
-const int RX_PIN_1 = ; 
-const int TX_PIN_1 = ;
+const int RX_PIN_1 = 2; 
+const int TX_PIN_1 = 4;
+const int RX_PIN_2 = 16; 
+const int TX_PIN_2 = 17;
 
 
-// Defining Addresses (if applicable for drivers)
+// Defining Addresses (if not using defaults for the library)
 
 
 
@@ -50,28 +53,41 @@ unsigned long prev_Micros = micros()    // Used to time the loop (so we can get 
 const long loop_Dur = 2000              // 500 Hz, can change based on how fast we can (reliably) get I2C on these protoboards
 
 
+// Create Sensor Objects 
+LPS22HH baro();
+LSM6DSV32X imu();
+Adafruit_GPS GPS(&gps_serial);
 
 
 // Function Declaration
-void init_gps()
-void init_lora()
-void init_sd()
-float convertToDecimal(float nmeaValue)
+void init_gps();
+void init_lora();
+void init_sd();
+float convertToDecimal(float nmeaValue);
+void send_gps(bool debug = true);
 
 
 
 void setup() {
   // Initializing comm buses
-  Serial.begin(115200); //Serial Baud Rate set to 115200
-  mySerial1.begin(9600, SERIAL_8N1, RX_PIN_1, TX_PIN_1);
 
+  // UART 0/1/2
+  Serial.begin(115200); //Serial Baud Rate set to 115200
+  gps_serial.begin(9600, SERIAL_8N1, RX_PIN_1, TX_PIN_1);
+  lora_serial.begin(9600, SERIAL_8N1, RX_PIN_2, TX_PIN_2);
+
+  // GPS
+  init_gps()
+
+  // I2C 
   Wire.begin()
 
-
-  // Initializing Sensors
-
+  // Initializing Sensors (Default Addresses)
+  imu.begin();
+  baro.begin();
 
   // Set up SD Card
+  init_sd();
 }
 
 void loop() {
@@ -81,7 +97,8 @@ void loop() {
 
   // Read Baro
 
-  // If 
+  // If GPS Data, Send OTA and/or print to Serial
+  send_gps();
 
 }
 
@@ -89,27 +106,83 @@ void loop() {
 
 
 void init_gps(){
-  // Initialize Serial1 on custom pins
-  GPSSerial.begin(9600, SERIAL_8N1, RX1_PIN, TX1_PIN);
-
-
   // Configure GPS output and update rate
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA); // RMC + GGA sentences
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);    // 1 Hz
   GPS.sendCommand(PGCMD_ANTENNA);               // antenna status
 
   delay(1000);
-  GPSSerial.println(PMTK_Q_RELEASE);           // request firmware version
+  gps_serial.println(PMTK_Q_RELEASE);           // request firmware version
 }
 
+
 void init_lora(){
-  lora.begin(9600);
 
   // can add more to this later
 }
+
 
 float convertToDecimal(float nmeaValue) {
   int deg = int(nmeaValue / 100);        // degrees
   float min = nmeaValue - deg * 100;     // minutes
   return deg + min / 60.0;
 }
+
+
+void init_sd(){
+  if (!SD.begin()){
+    Serial.println("SD Card Failed to Begin!");
+    while(1);
+  } else {
+    Serial.println("SD Card Initialized!");
+  }
+
+  File file = SD.open("/Test-Telemetry.csv", FILE_WRITE);
+  file.close();
+}
+
+void send_gps(bool debug){
+
+    if (debug){
+      Serial.print("Fix: "); Serial.println(GPS.fix); //Prints if fixed (aka if connected to SAT)
+    }
+
+    float lat = convertToDecimal(GPS.latitude);
+    if (GPS.lat == 'S') lat = -lat; //South = -lattitude
+
+    float lon = convertToDecimal(GPS.longitude);
+    if (GPS.lon == 'W') lon = -lon; //West = -longitude
+
+    if (debug){
+      Serial.print("Latitude: "); Serial.println(lat, 6); //Prints to Serial for debugging
+      Serial.print("Longitude: "); Serial.println(lon, 6);
+      Serial.print("Altitude (m): "); Serial.println(GPS.altitude);
+      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
+      Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+    }
+
+    String msg = String(lat,6) + "," + String(lon,6); //String(lat/lon, # of decimal Points(rounds up) )
+    if (GPS.fix) {
+      msg = "YG,"+ msg; //adds YG to message = Yes GPS Connected
+      if (debug){
+        Serial.println("YG added");
+      }
+    }
+    else {
+      msg = "NG,"+ msg; //adds NG to message = No GPS Connected
+      if (debug){
+        Serial.println("NG added");
+      }
+    }
+
+    double length =msg.length(); 
+    // To transmit requires: Reciever Address, message length, and message.
+    lora_serial.println("AT+SEND=" + lora_RX_address + ","+ length +","+msg); 
+    //AT+SEND is the transmit command for the RYLR
+    if (debug){
+      Serial.println("msg sent");
+      Serial.println("----------------------");
+    }
+}
+
+

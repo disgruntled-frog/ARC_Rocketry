@@ -95,6 +95,7 @@ void loop() {
     */
 
     // Serial Plotter Friendly 
+    /*
     Serial.print(imu[0]);
     Serial.print(", ");
     Serial.print(imu[1]);
@@ -106,6 +107,10 @@ void loop() {
     Serial.print(imu[4]);
     Serial.print(", ");
     Serial.println(imu[5]);
+    */
+
+    String data_str = "1,1,1,1,1,1,1";
+    Serial.print(data_str);
 
 
     delay(100);

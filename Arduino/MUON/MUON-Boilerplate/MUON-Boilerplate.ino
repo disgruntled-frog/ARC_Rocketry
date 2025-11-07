@@ -1,7 +1,4 @@
 
-
-
-
 /*
   Organization: ARCUIA
 
@@ -45,18 +42,28 @@ const int TX_PIN_2 = 17;
 
 
 // Defining Addresses (if not using defaults for the library)
-
+String lora_RX_address = "2";
 
 
 // Defining Global Variables
-unsigned long prev_Micros = micros()    // Used to time the loop (so we can get timestamps on data csv)
-const long loop_Dur = 2000              // 500 Hz, can change based on how fast we can (reliably) get I2C on these protoboards
+unsigned long prev_Micros = micros();    // Used to time the loop (so we can get timestamps on data csv)
+const long loop_Dur = 2000;              // 500 Hz, can change based on how fast we can (reliably) get I2C on these protoboards
 
 
 // Create Sensor Objects 
-LPS22HH baro();
-LSM6DSV32X imu();
+LPS22HH baro;
+LSM6DSV32X imu;
 Adafruit_GPS GPS(&gps_serial);
+
+
+// Value Arrays
+// void read(int32_t& raw_baro, double& baro);
+// void LSM6DSV32X::read(int16_t* _raw_data, double* _data)
+int32_t raw_baro = 0;
+double baro_data = 0.0;
+int16_t raw_imu[6] = {};
+double imu_data[6] = {};
+
 
 
 // Function Declaration
@@ -77,28 +84,42 @@ void setup() {
   lora_serial.begin(9600, SERIAL_8N1, RX_PIN_2, TX_PIN_2);
 
   // GPS
-  init_gps()
+  init_gps();
 
   // I2C 
-  Wire.begin()
+  Wire.begin();
 
   // Initializing Sensors (Default Addresses)
-  imu.begin();
-  baro.begin();
+  imu.config();
+  baro.config();
 
   // Set up SD Card
   init_sd();
 }
 
 void loop() {
-  // Read Acc
-
-  // Read Gyro
+  // Read Imu
+  imu.read(raw_imu,imu_data);
 
   // Read Baro
+  baro.read(raw_baro,baro_data);
 
   // If GPS Data, Send OTA and/or print to Serial
   send_gps();
+
+  Serial.print(imu_data[0]);
+  Serial.print(",");
+  Serial.print(imu_data[1]);
+  Serial.print(",");
+  Serial.print(imu_data[2]);
+  Serial.print(",");
+  Serial.print(imu_data[3]);
+  Serial.print(",");
+  Serial.print(imu_data[4]);
+  Serial.print(",");
+  Serial.print(imu_data[5]);
+  Serial.print(",");
+  Serial.println(baro_data);
 
 }
 

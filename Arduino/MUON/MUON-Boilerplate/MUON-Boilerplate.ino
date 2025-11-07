@@ -31,12 +31,13 @@
 // Defining Objects
 HardwareSerial gps_serial(1);  // The '1' indicates UART1
 HardwareSerial lora_serial(2); // The '2' indicates UART2
-
+File telemetryFile;
+String filename;
 
 
 // Defining Pins
-const int RX_PIN_1 = 2; 
-const int TX_PIN_1 = 4;
+const int RX_PIN_1 = 26; 
+const int TX_PIN_1 = 25;
 const int RX_PIN_2 = 16; 
 const int TX_PIN_2 = 17;
 
@@ -70,8 +71,10 @@ double imu_data[6] = {};
 void init_gps();
 void init_lora();
 void init_sd();
+void write_sd();
 float convertToDecimal(float nmeaValue);
 void send_gps(bool debug = true);
+String getNextFilename(const String &base, const String &ext)
 
 
 
@@ -98,32 +101,47 @@ void setup() {
 }
 
 void loop() {
-  // Read Imu
-  imu.read(raw_imu,imu_data);
+  unsigned long currentMicros = micros();
 
-  // Read Baro
-  baro.read(raw_baro,baro_data);
+  // Check if enough time has passed since the last execution
+  if (currentMicros - prev_Micros >= loop_Dur) {
+    // Update prev
+    prev_Micros = currentMicros;
+    
+    // Read Imu
+    imu.read(raw_imu,imu_data);
 
-  // If GPS Data, Send OTA and/or print to Serial
-  send_gps();
+    // Read Baro
+    baro.read(raw_baro,baro_data);
 
-  Serial.print(imu_data[0]);
-  Serial.print(",");
-  Serial.print(imu_data[1]);
-  Serial.print(",");
-  Serial.print(imu_data[2]);
-  Serial.print(",");
-  Serial.print(imu_data[3]);
-  Serial.print(",");
-  Serial.print(imu_data[4]);
-  Serial.print(",");
-  Serial.print(imu_data[5]);
-  Serial.print(",");
-  Serial.println(baro_data);
+    // If GPS Data, Send OTA and/or print to Serial
+    send_gps();
+
+    // Log data
+    write_sd();
+
+    /*
+    Serial.print(imu_data[0]);
+    Serial.print(",");
+    Serial.print(imu_data[1]);
+    Serial.print(",");
+    Serial.print(imu_data[2]);
+    Serial.print(",");
+    Serial.print(imu_data[3]);
+    Serial.print(",");
+    Serial.print(imu_data[4]);
+    Serial.print(",");
+    Serial.print(imu_data[5]);
+    Serial.print(",");
+    Serial.println(baro_data);
+`   */
+  }
 
 }
 
 
+
+/****************************************************************************************/
 
 
 void init_gps(){
@@ -151,15 +169,41 @@ float convertToDecimal(float nmeaValue) {
 
 
 void init_sd(){
-  if (!SD.begin()){
-    Serial.println("SD Card Failed to Begin!");
-    while(1);
-  } else {
-    Serial.println("SD Card Initialized!");
+  if (!SD.begin(CS_PIN)) {
+    Serial.println("SD card initialization failed!");
+    while (true);
   }
+  Serial.println("SD card initialized.");
 
-  File file = SD.open("/Test-Telemetry.csv", FILE_WRITE);
-  file.close();
+  filename = getNextFilename("/telemetry_", ".csv");
+  telemetryFile = SD.open(filename, FILE_WRITE);
+
+  if (telemetryFile) {
+    Serial.print("Created file: ");
+    Serial.println(filename);
+    telemetryFile.println("IMU,,,,,,BARO"); // Formatting, add in positions later
+    telemetryFile.close();
+  } else {
+    Serial.println("Error creating file!");
+  }
+}
+
+void write_sd(){
+
+  telemetryFile = SD.open(filename, FILE_APPEND);
+
+  String data_string = "";
+
+  for (int i = 0; i < 6; i++) {
+    data_string += String(raw_imu[i]); 
+    if (i < 5) {
+      data_string += ", "; 
+    }
+  }
+  data_string += String(raw_baro);
+
+  telemetryFile.println(data_string);
+  
 }
 
 void send_gps(bool debug){
@@ -206,4 +250,14 @@ void send_gps(bool debug){
     }
 }
 
+// Returns the next unused file name like /telemetry_1.csv, /telemetry_2.csv, etc.
+String getNextFilename(const String &base, const String &ext) {
+  int fileIndex = 1;
+  String path;
+  do {
+    path = base + String(fileIndex) + ext;
+    fileIndex++;
+  } while (SD.exists(path));
+  return path;
+}
 

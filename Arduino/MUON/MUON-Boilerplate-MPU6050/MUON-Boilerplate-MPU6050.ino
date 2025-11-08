@@ -126,12 +126,12 @@ void loop() {
     mpu.getEvent(&a, &g, &temp);
 
     // Janky shit so I dont need to rewrite everything
-    raw_data[0] = a.acceleration.x;
-    raw_data[1] = a.acceleration.y;
-    raw_data[2] = a.acceleration.z;
-    raw_data[3] = g.gyro.x;
-    raw_data[4] = g.gyro.y;
-    raw_data[5] = g.gyro.z;
+    raw_imu[0] = a.acceleration.x;
+    raw_imu[1] = a.acceleration.y;
+    raw_imu[2] = a.acceleration.z;
+    raw_imu[3] = g.gyro.x;
+    raw_imu[4] = g.gyro.y;
+    raw_imu[5] = g.gyro.z;
 
     // Read Baro
     baro.read(raw_baro,baro_data);

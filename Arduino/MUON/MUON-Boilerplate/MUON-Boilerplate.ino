@@ -169,7 +169,7 @@ float convertToDecimal(float nmeaValue) {
 
 
 void init_sd(){
-  if (!SD.begin(CS_PIN)) {
+  if (!SD.begin()) {
     Serial.println("SD card initialization failed!");
     while (true);
   }

@@ -74,7 +74,7 @@ void init_sd();
 void write_sd();
 float convertToDecimal(float nmeaValue);
 void send_gps(bool debug = true);
-String getNextFilename(const String &base, const String &ext)
+String getNextFilename(const String &base, const String &ext);
 
 
 
@@ -196,9 +196,7 @@ void write_sd(){
 
   for (int i = 0; i < 6; i++) {
     data_string += String(raw_imu[i]); 
-    if (i < 5) {
-      data_string += ", "; 
-    }
+    data_string += ", "; 
   }
   data_string += String(raw_baro);
 

@@ -126,12 +126,12 @@ void loop() {
     mpu.getEvent(&a, &g, &temp);
 
     // Janky shit so I dont need to rewrite everything
-    raw_imu[0] = a.acceleration.x;
-    raw_imu[1] = a.acceleration.y;
-    raw_imu[2] = a.acceleration.z;
-    raw_imu[3] = g.gyro.x;
-    raw_imu[4] = g.gyro.y;
-    raw_imu[5] = g.gyro.z;
+    // raw_imu[0] = a.acceleration.x;
+    // raw_imu[1] = a.acceleration.y;
+    // raw_imu[2] = a.acceleration.z;
+    // raw_imu[3] = g.gyro.x;
+    // raw_imu[4] = g.gyro.y;
+    // raw_imu[5] = g.gyro.z;
 
     // Read Baro
     baro.read(raw_baro,baro_data);
@@ -216,12 +216,20 @@ void write_sd(){
 
   String data_string = "";
 
-  for (int i = 0; i < 6; i++) {
-    data_string += String(raw_imu[i]); 
-    if (i < 5) {
-      data_string += ", "; 
-    }
-  }
+  data_string += String(a.acceleration.x, 3);
+  data_string += ",";
+  data_string += String(a.acceleration.y, 3);
+  data_string += ",";
+  data_string += String(a.acceleration.z, 3);
+  data_string += ",";
+  data_string += String(g.gyro.x, 3);
+  data_string += ",";
+  data_string += String(g.gyro.y, 3);
+  data_string += ",";
+  data_string += String(g.gyro.z, 3);
+  data_string += ",";
+
+
   data_string += String(raw_baro);
 
   telemetryFile.println(data_string);
